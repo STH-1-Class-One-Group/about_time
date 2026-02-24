@@ -1,20 +1,55 @@
-<style>
-  .container { display: flex; gap: 20px; font-family: sans-serif; }
-  section { border: 1px solid #ddd; padding: 15px; width: 300px; min-height: 400px; }
-  .pokemon-card { border: 1px solid #eee; margin: 5px; text-align: center; padding: 10px; }
-  .loader { color: #999; font-style: italic; }
-  img { width: 100px; height: 100px; }
-</style>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeAPI Sync vs Async Race</title>
+    <style>
+        :root { --pika-color: #f1c40f; --bulba-color: #2ecc71; }
+        body { font-family: 'sans-serif'; display: flex; flex-direction: column; align-items: center; background: #f0f0f0; }
+        
+        .race-track { display: flex; gap: 20px; width: 90%; max-width: 1000px; margin-top: 20px; }
+        section { flex: 1; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); min-height: 400px; position: relative; }
+        
+        h2 { text-align: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .evolution-path { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-top: 20px; }
+        
+        /* 카드 및 이미지 스타일 */
+        .card { border: 2px solid #eee; border-radius: 10px; padding: 10px; text-align: center; width: 120px; background: #fff; transition: transform 0.2s; }
+        .card img { width: 100px; height: 100px; }
+        
+        /* 로더 스타일 */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-<div class="container">
-  <section id="sync-section">
-    <h3>Sync (Pikachu)</h3>
-    <div id="sync-loader" class="loader">로딩 중... (전체 대기)</div>
-    <div id="sync-content"></div>
-  </section>
+        /* 상태창 */
+        .timer { font-weight: bold; color: #e74c3c; text-align: center; margin-bottom: 10px; }
+        button { padding: 15px 40px; font-size: 1.2rem; cursor: pointer; background: #34495e; color: white; border: none; border-radius: 50px; margin-top: 20px; }
+        button:hover { background: #2c3e50; }
+    </style>
+</head>
+<body>
 
-  <section id="async-section">
-    <h3>Async (Bulbasaur)</h3>
-    <div id="async-content"></div>
-  </section>
-</div>
+    <h1>⚡ Pokemon Evolution Race 🌿</h1>
+    <p>동기(Sync) vs 비동기(Async) 로딩 속도를 비교해보세요.</p>
+    
+    <button id="start-btn">🏁 RACE START!</button>
+
+    <div class="race-track">
+        <section id="sync-section">
+            <h2 style="color: var(--pika-color);">Sync: Pikachu Family</h2>
+            <div id="sync-timer" class="timer">Ready...</div>
+            <div id="sync-loader" class="loader" style="display: none;"></div>
+            <div id="sync-container" class="evolution-path"></div>
+        </section>
+
+        <section id="async-section">
+            <h2 style="color: var(--bulba-color);">Async: Bulbasaur Family</h2>
+            <div id="async-timer" class="timer">Ready...</div>
+            <div id="async-container" class="evolution-path"></div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
