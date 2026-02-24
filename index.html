@@ -1,0 +1,20 @@
+<style>
+  .container { display: flex; gap: 20px; font-family: sans-serif; }
+  section { border: 1px solid #ddd; padding: 15px; width: 300px; min-height: 400px; }
+  .pokemon-card { border: 1px solid #eee; margin: 5px; text-align: center; padding: 10px; }
+  .loader { color: #999; font-style: italic; }
+  img { width: 100px; height: 100px; }
+</style>
+
+<div class="container">
+  <section id="sync-section">
+    <h3>Sync (Pikachu)</h3>
+    <div id="sync-loader" class="loader">로딩 중... (전체 대기)</div>
+    <div id="sync-content"></div>
+  </section>
+
+  <section id="async-section">
+    <h3>Async (Bulbasaur)</h3>
+    <div id="async-content"></div>
+  </section>
+</div>
