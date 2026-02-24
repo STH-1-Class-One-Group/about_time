@@ -56,6 +56,51 @@ async function runAsyncTest() {
   console.timeEnd('전체 비동기 소요 시간');
 }
 
+async function renderSync() {
+  const syncContainer = document.getElementById('sync-container');
+  const loader = document.getElementById('sync-loader');
+  const pikaFamily = ['pichu', 'pikachu', 'raichu'];
+  
+  loader.style.display = 'block'; // 전체 로더 시작
+  const results = [];
+
+  for (const name of pikaFamily) {
+    const data = await getPokemon(name); // 하나씩 기다림
+    results.push(data);
+  }
+
+  // 모든 루프가 끝나면 한꺼번에 렌더링
+  loader.style.display = 'none';
+  syncContainer.innerHTML = results.map(p => `
+    <div class="card">
+      <img src="${p.image}" alt="${p.name}">
+      <p>${p.name}</p>
+    </div>
+  `).join('');
+}
+
+function renderAsync() {
+  const asyncContainer = document.getElementById('async-container');
+  const bulbaFamily = ['bulbasaur', 'ivysaur', 'venusaur'];
+
+  bulbaFamily.forEach(async (name) => {
+    // 1. 먼저 빈 '카드'와 '로더'를 화면에 즉시 생성
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="loader"></div>`;
+    asyncContainer.appendChild(card);
+
+    // 2. 비동기로 데이터 가져오기
+    const data = await getPokemon(name);
+
+    // 3. 데이터가 도착하면 로더를 지우고 이미지를 넣기
+    card.innerHTML = `
+      <img src="${data.image}" alt="${data.name}">
+      <p>${data.name}</p>
+    `;
+  });
+}
+
 async function main() {
   await runSyncTest();
   await runAsyncTest();
