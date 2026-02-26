@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Step 4 — queueMicrotask</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d0d1a; --surface: #13132b; --border: #2a2a4a;
+            --text: #e8e8ff; --muted: #6666aa;
+            --pika: #f1c40f; --squirt: #3498db; --bulba: #2ecc71; --jiggly: #e91e8c;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'IBM Plex Mono', monospace; background: var(--bg); color: var(--text); padding: 40px 20px; }
+
+        h1 { font-family: 'Press Start 2P', monospace; font-size: 0.9rem; color: var(--jiggly); text-align: center; margin-bottom: 8px; line-height: 1.8; }
+        .subtitle { text-align: center; color: var(--muted); font-size: 0.7rem; margin-bottom: 32px; }
+
+        .race-track { display: flex; gap: 14px; max-width: 1100px; margin: 0 auto 24px; flex-wrap: wrap; }
+        .panel { flex: 1 1 220px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+        .panel.taskqueue  { background: rgba(52,152,219,0.06);  border-color: rgba(52,152,219,0.25); }
+        .panel.microtask  { background: rgba(46,204,113,0.06);  border-color: rgba(46,204,113,0.25); }
+        .panel.microtask2 { background: rgba(233,30,140,0.06);  border-color: rgba(233,30,140,0.25); }
+        .panel h2 { font-family: 'Press Start 2P', monospace; font-size: 0.48rem; text-align: center; margin-bottom: 12px; line-height: 1.9; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+        .card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; background: rgba(255,255,255,0.03); animation: popIn 0.2s ease; }
+        .card p { font-size: 0.68rem; margin: 2px 0; }
+        @keyframes popIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+        .timer { font-size: 0.62rem; text-align: center; margin-bottom: 10px; font-weight: 600; }
+
+        .btn-row { display: flex; justify-content: center; margin-bottom: 32px; }
+        button { font-family: 'Press Start 2P', monospace; font-size: 0.6rem; padding: 14px 28px; background: var(--jiggly); color: #fff; border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 0 #8a0a50; }
+        button:active { transform: translateY(2px); }
+
+        .console-tip { text-align: center; font-size: 0.65rem; color: var(--muted); margin-bottom: 24px; }
+        .console-tip code { color: var(--jiggly); }
+
+        .explain { background: rgba(233,30,140,0.06); border: 1px solid rgba(233,30,140,0.2); border-radius: 8px; padding: 16px; max-width: 1100px; margin: 0 auto; font-size: 0.68rem; line-height: 1.9; color: var(--muted); }
+        .explain strong { color: var(--text); }
+    </style>
+</head>
+<body>
+
+    <h1>Step 4</h1>
+    <h1 style="margin-top:4px; color:var(--jiggly);">queueMicrotask()</h1>
+    <p class="subtitle">Promise 없이 직접 Microtask Queue에 등록</p>
+    <p class="console-tip">💡 <code>F12 → Console</code> 핵심: 푸린이 꼬부기보다 먼저 처리됩니다</p>
+
+    <div class="btn-row">
+        <button id="start-btn">🏁 START</button>
+    </div>
+
+    <div class="race-track">
+        <div class="panel">
+            <h2 style="color:var(--pika);">① Pikachu 🟡<br>CallStack (동기)</h2>
+            <div id="sync-timer" class="timer" style="color:var(--pika);">Ready...</div>
+            <div id="sync-container"></div>
+        </div>
+
+        <div class="panel taskqueue">
+            <h2 style="color:var(--squirt);">② Squirtle 🔵<br>Task Queue<br>(setTimeout)</h2>
+            <div id="squirtle-timer" class="timer" style="color:var(--squirt);">Ready...</div>
+            <div id="squirtle-container"></div>
+        </div>
+
+        <div class="panel microtask">
+            <h2 style="color:var(--bulba);">③ Bulbasaur 🌿<br>Microtask<br>(Promise .then)</h2>
+            <div id="bulba-timer" class="timer" style="color:var(--bulba);">Ready...</div>
+            <div id="bulba-container"></div>
+        </div>
+
+        <div class="panel microtask2">
+            <h2 style="color:var(--jiggly);">④ Jigglypuff 💗<br>Microtask<br>(queueMicrotask)</h2>
+            <div id="jiggly-timer" class="timer" style="color:var(--jiggly);">Ready...</div>
+            <div id="jiggly-container"></div>
+        </div>
+    </div>
+
+    <div class="explain">
+        <strong>queueMicrotask() 란?</strong><br><br>
+        Promise를 만들지 않고 <strong>직접 Microtask Queue에 함수를 밀어넣는</strong> Web API입니다.<br><br>
+        Promise .then과 동일한 큐에 들어가므로,<br>
+        ③ 이상해씨와 ④ 푸린은 둘 다 Task Queue(꼬부기)보다 먼저 처리됩니다.<br><br>
+        콘솔에서 ③ BULBA와 ④ JIGGLY 실행 로그가<br>
+        ② SQUIRT 실행 로그보다 먼저 찍히는지 확인하세요.
+    </div>
+
+    <script>
+        const raceStart = { time: 0 };
+
+        function log(section, message) {
+            const elapsed = ((performance.now() - raceStart.time) / 1000).toFixed(3);
+            console.log(`[${elapsed}s] %c${section}%c ${message}`,
+                'font-weight:bold; color:#aaffaa;', 'font-weight:normal;');
+        }
+
+        function renderCard(containerId, name, label, color) {
+            const elapsed = ((performance.now() - raceStart.time) / 1000).toFixed(3);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <p><strong style="color:${color};">${name}</strong></p>
+                <p style="color:${color}; font-size:0.58rem;">${label}</p>
+                <p style="color:var(--muted); font-size:0.52rem;">+${elapsed}s</p>
+            `;
+            document.getElementById(containerId).appendChild(card);
+        }
+
+        function runPikaSection() {
+            document.getElementById('sync-container').innerHTML = '';
+            document.getElementById('sync-timer').innerText = 'Running...';
+            log('① PIKA  ', '▶ 시작 — CallStack 블로킹');
+            for (const name of ['피츄', '피카츄', '라이츄']) {
+                log('① PIKA  ', `  실행 → ${name}`);
+                renderCard('sync-container', name, 'CallStack (동기)', 'var(--pika)');
+            }
+            log('① PIKA  ', '■ 완료');
+            document.getElementById('sync-timer').innerText = '✅ 완료';
+        }
+
+        function runSquirtleSection() {
+            document.getElementById('squirtle-container').innerHTML = '';
+            document.getElementById('squirtle-timer').innerText = 'Waiting...';
+            log('② SQUIRT', '▶ setTimeout 0ms 등록');
+            ['꼬부기', '어니부기', '거북왕'].forEach((name, i) => {
+                setTimeout(() => {
+                    log('② SQUIRT', `  ✅ Task Queue 실행 → ${name}`);
+                    renderCard('squirtle-container', name, 'Task Queue (setTimeout)', 'var(--squirt)');
+                    if (i === 2) document.getElementById('squirtle-timer').innerText = '✅ 완료';
+                }, 0);
+                log('② SQUIRT', `  등록 (${name})`);
+            });
+            log('② SQUIRT', '■ 등록 완료 → 즉시 반환');
+        }
+
+        function runBulbaSection() {
+            document.getElementById('bulba-container').innerHTML = '';
+            document.getElementById('bulba-timer').innerText = 'Waiting...';
+            log('③ BULBA ', '▶ Promise.resolve().then 체인 등록');
+            ['이상해씨', '이상해풀', '이상해꽃'].reduce((chain, name, i) => {
+                return chain.then(() => {
+                    log('③ BULBA ', `  ✅ Microtask .then() → ${name}`);
+                    renderCard('bulba-container', name, 'Microtask (Promise .then)', 'var(--bulba)');
+                    if (i === 2) document.getElementById('bulba-timer').innerText = '✅ 완료';
+                });
+            }, Promise.resolve());
+            log('③ BULBA ', '■ 등록 완료 → 즉시 반환');
+        }
+
+        // ④ 푸린 — queueMicrotask 직접 등록
+        function runJigglypuffSection() {
+            document.getElementById('jiggly-container').innerHTML = '';
+            document.getElementById('jiggly-timer').innerText = 'Waiting...';
+            log('④ JIGGLY', '▶ queueMicrotask 직접 등록');
+
+            ['푸린', '푸크린'].forEach((name, i) => {
+                // Promise를 전혀 사용하지 않고 직접 Microtask Queue에 등록
+                queueMicrotask(() => {
+                    log('④ JIGGLY', `  ✅ Microtask queueMicrotask → ${name}`);
+                    renderCard('jiggly-container', name, 'Microtask (queueMicrotask)', 'var(--jiggly)');
+                    if (i === 1) document.getElementById('jiggly-timer').innerText = '✅ 완료';
+                });
+                log('④ JIGGLY', `  등록 (${name}) → Promise 없이 직접 Microtask Queue`);
+            });
+
+            log('④ JIGGLY', '■ 등록 완료 → 즉시 반환');
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            raceStart.time = performance.now();
+            console.clear();
+            console.log('%c=== Step 4: queueMicrotask ===', 'font-size:1rem; font-weight:bold; color:#e91e8c;');
+            console.log('%c③④ 마이크로태스크가 모두 끝난 후에야 ② 꼬부기가 처리됩니다.', 'color:#888;');
+            console.log('');
+
+            runPikaSection();
+            runSquirtleSection();
+            runBulbaSection();
+            runJigglypuffSection();
+        });
+    </script>
+</body>
+</html>

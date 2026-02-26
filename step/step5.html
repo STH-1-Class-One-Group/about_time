@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Step 5 — MutationObserver</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d0d1a; --surface: #13132b; --border: #2a2a4a;
+            --text: #e8e8ff; --muted: #6666aa;
+            --pika: #f1c40f; --squirt: #3498db; --bulba: #2ecc71;
+            --jiggly: #e91e8c; --caterpie: #ff6b35;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'IBM Plex Mono', monospace; background: var(--bg); color: var(--text); padding: 40px 20px; }
+
+        h1 { font-family: 'Press Start 2P', monospace; font-size: 0.9rem; color: var(--caterpie); text-align: center; margin-bottom: 8px; line-height: 1.8; }
+        .subtitle { text-align: center; color: var(--muted); font-size: 0.7rem; margin-bottom: 32px; }
+
+        .race-track { display: flex; gap: 12px; max-width: 1200px; margin: 0 auto 24px; flex-wrap: wrap; }
+        .panel { flex: 1 1 180px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .panel.taskqueue  { background: rgba(52,152,219,0.06);  border-color: rgba(52,152,219,0.25); }
+        .panel.microtask  { background: rgba(46,204,113,0.06);  border-color: rgba(46,204,113,0.25); }
+        .panel.microtask2 { background: rgba(233,30,140,0.06);  border-color: rgba(233,30,140,0.25); }
+        .panel.microtask3 { background: rgba(255,107,53,0.06);  border-color: rgba(255,107,53,0.25); }
+        .panel h2 { font-family: 'Press Start 2P', monospace; font-size: 0.44rem; text-align: center; margin-bottom: 12px; line-height: 2; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+        .card { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: rgba(255,255,255,0.03); animation: popIn 0.2s ease; }
+        .card p { font-size: 0.65rem; margin: 2px 0; }
+        @keyframes popIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+        .timer { font-size: 0.58rem; text-align: center; margin-bottom: 8px; font-weight: 600; min-height: 1.4em; }
+
+        .btn-row { display: flex; justify-content: center; margin-bottom: 32px; }
+        button { font-family: 'Press Start 2P', monospace; font-size: 0.6rem; padding: 14px 28px; background: var(--caterpie); color: #fff; border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 0 #a03800; }
+        button:active { transform: translateY(2px); }
+
+        .console-tip { text-align: center; font-size: 0.65rem; color: var(--muted); margin-bottom: 24px; }
+        .console-tip code { color: var(--caterpie); }
+
+        .explain { background: rgba(255,107,53,0.06); border: 1px solid rgba(255,107,53,0.2); border-radius: 8px; padding: 16px; max-width: 1200px; margin: 0 auto; font-size: 0.68rem; line-height: 1.9; color: var(--muted); }
+        .explain strong { color: var(--text); }
+
+        .summary-grid { display: flex; gap: 10px; max-width: 1200px; margin: 24px auto 0; flex-wrap: wrap; }
+        .summary-item { flex: 1 1 180px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 0.6rem; line-height: 1.8; }
+        .summary-item .label { font-family: 'Press Start 2P', monospace; font-size: 0.42rem; margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+
+    <h1>Step 5 — FINAL</h1>
+    <h1 style="margin-top:4px; color:var(--caterpie);">MutationObserver</h1>
+    <p class="subtitle">5가지 전부 — 이벤트 루프 완성</p>
+    <p class="console-tip">💡 <code>F12 → Console</code> 전체 실행 순서를 타임스탬프로 확인하세요</p>
+
+    <div class="btn-row">
+        <button id="start-btn">🏁 FINAL RACE START</button>
+    </div>
+
+    <div class="race-track">
+        <div class="panel">
+            <h2 style="color:var(--pika);">① Pikachu 🟡<br>CallStack<br>(동기)</h2>
+            <div id="sync-timer" class="timer" style="color:var(--pika);">Ready...</div>
+            <div id="sync-container"></div>
+        </div>
+
+        <div class="panel taskqueue">
+            <h2 style="color:var(--squirt);">② Squirtle 🔵<br>Task Queue<br>(setTimeout)</h2>
+            <div id="squirtle-timer" class="timer" style="color:var(--squirt);">Ready...</div>
+            <div id="squirtle-container"></div>
+        </div>
+
+        <div class="panel microtask">
+            <h2 style="color:var(--bulba);">③ Bulbasaur 🌿<br>Microtask<br>(Promise .then)</h2>
+            <div id="bulba-timer" class="timer" style="color:var(--bulba);">Ready...</div>
+            <div id="bulba-container"></div>
+        </div>
+
+        <div class="panel microtask2">
+            <h2 style="color:var(--jiggly);">④ Jigglypuff 💗<br>Microtask<br>(queueMicrotask)</h2>
+            <div id="jiggly-timer" class="timer" style="color:var(--jiggly);">Ready...</div>
+            <div id="jiggly-container"></div>
+        </div>
+
+        <div class="panel microtask3">
+            <h2 style="color:var(--caterpie);">⑤ Caterpie 🐛<br>Microtask<br>(MutationObserver)</h2>
+            <div id="caterpie-timer" class="timer" style="color:var(--caterpie);">Ready...</div>
+            <div id="caterpie-container"></div>
+        </div>
+    </div>
+
+    <div class="explain">
+        <strong>MutationObserver 란?</strong><br><br>
+        DOM의 변화(자식 추가, 속성 변경 등)를 감지하면<br>
+        콜백을 <strong>Microtask Queue에 등록</strong>합니다.<br><br>
+        여기서는 콜백 안에서 다시 DOM을 건드려<br>
+        캐터피 → 단데기 → 버터플을 <strong>연쇄적으로</strong> 트리거합니다.<br><br>
+        → ③④⑤ 모두 Microtask이므로 ② 꼬부기보다 먼저 처리됩니다.
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="label" style="color:var(--pika);">① CallStack</div>
+            동기 블로킹<br>루프가 끝날 때까지<br>다른 모든 것 대기
+        </div>
+        <div class="summary-item">
+            <div class="label" style="color:var(--squirt);">② Task Queue</div>
+            setTimeout<br>Microtask 전부 소진 후<br>하나씩 처리
+        </div>
+        <div class="summary-item">
+            <div class="label" style="color:var(--bulba);">③ Microtask</div>
+            Promise .then<br>콜스택 빌 때마다<br>큐 전체 소진
+        </div>
+        <div class="summary-item">
+            <div class="label" style="color:var(--jiggly);">④ Microtask</div>
+            queueMicrotask<br>Promise 없이<br>직접 등록
+        </div>
+        <div class="summary-item">
+            <div class="label" style="color:var(--caterpie);">⑤ Microtask</div>
+            MutationObserver<br>DOM 변화 감지<br>연쇄 트리거 가능
+        </div>
+    </div>
+
+    <script>
+        const raceStart = { time: 0 };
+
+        function log(section, message) {
+            const elapsed = ((performance.now() - raceStart.time) / 1000).toFixed(3);
+            console.log(`[${elapsed}s] %c${section}%c ${message}`,
+                'font-weight:bold; color:#aaffaa;', 'font-weight:normal;');
+        }
+
+        function renderCard(containerId, name, label, color) {
+            const elapsed = ((performance.now() - raceStart.time) / 1000).toFixed(3);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <p><strong style="color:${color};">${name}</strong></p>
+                <p style="color:${color}; font-size:0.55rem;">${label}</p>
+                <p style="color:var(--muted); font-size:0.5rem;">+${elapsed}s</p>
+            `;
+            document.getElementById(containerId).appendChild(card);
+        }
+
+        function runPikaSection() {
+            document.getElementById('sync-container').innerHTML = '';
+            document.getElementById('sync-timer').innerText = 'Running...';
+            log('① PIKA  ', '▶ CallStack 블로킹 시작');
+            for (const name of ['피츄', '피카츄', '라이츄']) {
+                log('① PIKA  ', `  실행 → ${name}`);
+                renderCard('sync-container', name, 'CallStack (동기)', 'var(--pika)');
+            }
+            log('① PIKA  ', '■ 완료');
+            document.getElementById('sync-timer').innerText = '✅ 완료';
+        }
+
+        function runSquirtleSection() {
+            document.getElementById('squirtle-container').innerHTML = '';
+            document.getElementById('squirtle-timer').innerText = 'Waiting...';
+            log('② SQUIRT', '▶ setTimeout 0ms 등록');
+            ['꼬부기', '어니부기', '거북왕'].forEach((name, i) => {
+                setTimeout(() => {
+                    log('② SQUIRT', `  ✅ Task Queue 실행 → ${name}`);
+                    renderCard('squirtle-container', name, 'Task Queue (setTimeout)', 'var(--squirt)');
+                    if (i === 2) document.getElementById('squirtle-timer').innerText = '✅ 완료';
+                }, 0);
+                log('② SQUIRT', `  등록 → ${name}`);
+            });
+            log('② SQUIRT', '■ 등록 완료 → 즉시 반환');
+        }
+
+        function runBulbaSection() {
+            document.getElementById('bulba-container').innerHTML = '';
+            document.getElementById('bulba-timer').innerText = 'Waiting...';
+            log('③ BULBA ', '▶ Promise.resolve().then 체인 등록');
+            ['이상해씨', '이상해풀', '이상해꽃'].reduce((chain, name, i) => {
+                return chain.then(() => {
+                    log('③ BULBA ', `  ✅ Microtask .then() → ${name}`);
+                    renderCard('bulba-container', name, 'Microtask (Promise .then)', 'var(--bulba)');
+                    if (i === 2) document.getElementById('bulba-timer').innerText = '✅ 완료';
+                });
+            }, Promise.resolve());
+            log('③ BULBA ', '■ 등록 완료 → 즉시 반환');
+        }
+
+        function runJigglypuffSection() {
+            document.getElementById('jiggly-container').innerHTML = '';
+            document.getElementById('jiggly-timer').innerText = 'Waiting...';
+            log('④ JIGGLY', '▶ queueMicrotask 직접 등록');
+            ['푸린', '푸크린'].forEach((name, i) => {
+                queueMicrotask(() => {
+                    log('④ JIGGLY', `  ✅ queueMicrotask 실행 → ${name}`);
+                    renderCard('jiggly-container', name, 'Microtask (queueMicrotask)', 'var(--jiggly)');
+                    if (i === 1) document.getElementById('jiggly-timer').innerText = '✅ 완료';
+                });
+                log('④ JIGGLY', `  등록 → ${name}`);
+            });
+            log('④ JIGGLY', '■ 등록 완료 → 즉시 반환');
+        }
+
+        function runCaterpieSection() {
+            const container = document.getElementById('caterpie-container');
+            container.innerHTML = '';
+            document.getElementById('caterpie-timer').innerText = 'Waiting...';
+            log('⑤ CATER ', '▶ MutationObserver 등록');
+
+            const caterpieFamily = ['캐터피', '단데기', '버터플'];
+            let index = 0;
+
+            const observer = new MutationObserver(() => {
+                // DOM 변화 감지 → 이 콜백이 Microtask Queue에 등록됨
+                if (index >= caterpieFamily.length) {
+                    observer.disconnect();
+                    document.getElementById('caterpie-timer').innerText = '✅ 완료';
+                    return;
+                }
+                const name = caterpieFamily[index++];
+                log('⑤ CATER ', `  ✅ MutationObserver 콜백 실행 → ${name}`);
+                renderCard('caterpie-container', name, 'Microtask (MutationObserver)', 'var(--caterpie)');
+
+                // 다음 포켓몬을 위해 또 DOM 변화 → 연쇄 트리거
+                if (index < caterpieFamily.length) {
+                    const next = document.createElement('div');
+                    next.style.display = 'none';
+                    container.appendChild(next);
+                }
+            });
+
+            observer.observe(container, { childList: true });
+
+            // 첫 트리거
+            log('⑤ CATER ', '  트리거 div 추가 → DOM 변화 → Microtask Queue 등록');
+            const trigger = document.createElement('div');
+            trigger.style.display = 'none';
+            container.appendChild(trigger);
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            raceStart.time = performance.now();
+            console.clear();
+            console.log('%c=== 🏁 Step 5: FINAL — 이벤트 루프 완성 ===', 'font-size:1rem; font-weight:bold; color:#ff6b35;');
+            console.log('%c실행 순서: ①(동기) → 등록: ②③④⑤ → 처리: ③④⑤(Microtask) → ②(Task Queue)', 'color:#888;');
+            console.log('');
+
+            runPikaSection();         // ① 동기 블로킹
+            runSquirtleSection();     // ② Task Queue 등록
+            runBulbaSection();        // ③ Microtask 등록
+            runJigglypuffSection();   // ④ Microtask 등록
+            runCaterpieSection();     // ⑤ Microtask 등록 + 트리거
+            // 콜스택 비워짐 → ③④⑤ Microtask 전부 소진 → ② Task Queue
+        });
+    </script>
+</body>
+</html>

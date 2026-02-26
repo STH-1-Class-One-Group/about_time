@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Step 1 — CallStack (동기)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d0d1a; --surface: #13132b; --border: #2a2a4a;
+            --text: #e8e8ff; --muted: #6666aa; --pika: #f1c40f;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'IBM Plex Mono', monospace; background: var(--bg); color: var(--text); padding: 40px 20px; }
+
+        h1 { font-family: 'Press Start 2P', monospace; font-size: 0.9rem; color: var(--pika); text-align: center; margin-bottom: 8px; line-height: 1.8; }
+        .subtitle { text-align: center; color: var(--muted); font-size: 0.7rem; margin-bottom: 32px; }
+
+        .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 400px; margin: 0 auto 24px; }
+        .panel h2 { font-family: 'Press Start 2P', monospace; font-size: 0.6rem; color: var(--pika); text-align: center; margin-bottom: 16px; line-height: 1.8; }
+
+        .card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; background: rgba(255,255,255,0.03); animation: popIn 0.2s ease; }
+        .card p { font-size: 0.75rem; margin: 2px 0; }
+        .card strong { color: var(--pika); }
+        @keyframes popIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+        .timer { font-size: 0.7rem; color: var(--pika); text-align: center; margin-bottom: 12px; }
+
+        .btn-row { display: flex; justify-content: center; margin-bottom: 32px; }
+        button { font-family: 'Press Start 2P', monospace; font-size: 0.6rem; padding: 14px 28px; background: var(--pika); color: #000; border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 4px 0 #b8960a; }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #b8960a; }
+
+        .console-tip { text-align: center; font-size: 0.65rem; color: var(--muted); margin-bottom: 24px; }
+        .console-tip code { color: #3498db; }
+
+        .explain { background: rgba(241,196,15,0.06); border: 1px solid rgba(241,196,15,0.2); border-radius: 8px; padding: 16px; max-width: 400px; margin: 0 auto; font-size: 0.68rem; line-height: 1.9; color: var(--muted); }
+        .explain strong { color: var(--text); }
+    </style>
+</head>
+<body>
+
+    <h1>Step 1</h1>
+    <h1 style="margin-top:4px;">CallStack — 동기</h1>
+    <p class="subtitle">피카츄 계열 | 완전 동기 처리</p>
+    <p class="console-tip">💡 <code>F12 → Console</code> 을 열어두세요</p>
+
+    <div class="btn-row">
+        <button id="start-btn">🏁 START</button>
+    </div>
+
+    <div class="panel">
+        <h2>① Pikachu Family 🟡<br>CallStack (동기)</h2>
+        <div id="sync-timer" class="timer">Ready...</div>
+        <div id="sync-container"></div>
+    </div>
+
+    <div class="explain">
+        <strong>무슨 일이 일어나나?</strong><br><br>
+        for...of 루프가 콜스택에서 실행됩니다.<br>
+        피츄 → 피카츄 → 라이츄 순서로<br>
+        <strong>블로킹</strong>하며 하나씩 처리합니다.<br><br>
+        다음 작업은 이 루프가 <strong>완전히 끝난 후</strong>에야<br>
+        콜스택에 올라올 수 있습니다.
+    </div>
+
+    <script>
+        const raceStart = { time: 0 };
+
+        function log(section, message) {
+            const elapsed = ((performance.now() - raceStart.time) / 1000).toFixed(3);
+            console.log(`[${elapsed}s] %c${section}%c ${message}`,
+                'font-weight:bold; color:#f1c40f;', 'font-weight:normal;');
+        }
+
+        function renderCard(containerId, name, label, color) {
+            const elapsed = ((performance.now() - raceStart.time) / 1000).toFixed(3);
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <p><strong>${name}</strong></p>
+                <p style="color:${color}; font-size:0.6rem;">${label}</p>
+                <p style="color:var(--muted); font-size:0.55rem;">+${elapsed}s</p>
+            `;
+            document.getElementById(containerId).appendChild(card);
+        }
+
+        // ① 피카츄 — 완전 동기
+        function runPikaSection() {
+            document.getElementById('sync-container').innerHTML = '';
+            document.getElementById('sync-timer').innerText = 'Running...';
+
+            log('① PIKA', '▶ 시작 — CallStack 블로킹');
+
+            const pikaFamily = ['피츄', '피카츄', '라이츄'];
+
+            for (const name of pikaFamily) {
+                // 이 루프 전체가 콜스택에서 동기적으로 실행됨
+                // → 루프가 끝나기 전까지 다른 어떤 것도 실행 불가
+                log('① PIKA', `  콜스택 실행 → ${name}`);
+                renderCard('sync-container', name, 'CallStack (동기)', 'var(--pika)');
+            }
+
+            log('① PIKA', '■ 완료 — 루프 종료, 콜스택에서 내려옴');
+            document.getElementById('sync-timer').innerText = '✅ 완료';
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            raceStart.time = performance.now();
+            console.clear();
+            console.log('%c=== Step 1: CallStack (동기) ===', 'font-size:1rem; font-weight:bold; color:#f1c40f;');
+            console.log('%c피카츄 계열은 for...of 루프가 끝날 때까지 모든 것을 블로킹합니다.', 'color:#888;');
+            console.log('');
+
+            runPikaSection();
+        });
+    </script>
+</body>
+</html>
